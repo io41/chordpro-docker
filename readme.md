@@ -5,6 +5,8 @@ for creating a docker image with the
 [chordpro](https://chordpro.org) cli utility
 available.
 
+Docker image available here [Docker Hub](https://hub.docker.com/r/matejkubinec/chordpro).
+
 ## Building
 
 Build the docker image.
