@@ -1,4 +1,7 @@
-FROM perl:buster
-RUN apt-get update \
-    && cpan install chordpro
+FROM perl:slim-bullseye
+RUN apt-get update
+RUN apt-get install -y \
+    libpdf-api2-perl \
+    libimage-info-perl
+RUN cpan install chordpro
 ENTRYPOINT ["chordpro"]
