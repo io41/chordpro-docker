@@ -1,7 +1,5 @@
-FROM perl:stable-bookworm
+FROM ubuntu:rolling
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update
-RUN apt-get install -y \
-    libpdf-api2-perl \
-    libimage-info-perl
-RUN cpan install chordpro
+RUN apt-get install -y chordpro
 ENTRYPOINT ["chordpro"]
