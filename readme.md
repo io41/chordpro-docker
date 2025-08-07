@@ -2,6 +2,8 @@
 
 This repository provides a Web API wrapper for the [ChordPro](https://chordpro.org) CLI utility, packaged as a Docker container. The API allows you to convert ChordPro format files to PDF, HTML, text, and other formats via HTTP requests.
 
+**Docker Hub**: [`io41/chordpro-api`](https://hub.docker.com/r/io41/chordpro-api)
+
 ## Features
 
 - **RESTful API** for ChordPro conversions
@@ -16,10 +18,25 @@ This repository provides a Web API wrapper for the [ChordPro](https://chordpro.o
 
 ## Quick Start
 
-### Build and Run
+### Quick Start with Docker Hub
 
 ```bash
-# Build the Docker image
+# PRODUCTION (Secure by default - API keys required):
+docker run -d -p 8080:8080 \
+  -e API_KEYS="your-secure-api-key-here" \
+  --name chordpro-api \
+  io41/chordpro-api:latest
+
+# DEVELOPMENT (No authentication):
+docker run -d -p 8080:8080 \
+  --name chordpro-api-dev \
+  io41/chordpro-api:dev
+```
+
+### Build from Source
+
+```bash
+# Build the Docker image locally
 make build
 
 # PRODUCTION (Secure by default - API keys required):

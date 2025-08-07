@@ -2,22 +2,31 @@
 
 ## Starting the API Server
 
+### Using Docker Hub (Recommended)
+
+```bash
+# PRODUCTION - Run with API key authentication
+docker run -d -p 8080:8080 \
+  -e API_KEYS="your-secure-api-key-here" \
+  --name chordpro-api \
+  io41/chordpro-api:latest
+
+# DEVELOPMENT - Run without authentication
+docker run -d -p 8080:8080 \
+  --name chordpro-api-dev \
+  io41/chordpro-api:dev
+```
+
+### Building from Source
+
 ```bash
 # Build the Docker image
 docker build -t chordpro-api .
 
-# Run without authentication (development mode)
-docker run --rm -p 8080:8080 --name chordpro-api chordpro-api
-
-# Run with API key authentication
-docker run --rm -p 8080:8080 --name chordpro-api \
-  -e API_KEYS="your-api-key,another-key" \
-  chordpro-api
-
 # Or use make commands
 make build
-make run-api                    # Development mode (no auth)
-API_KEYS="key1,key2" make run-api-auth  # With authentication
+API_KEYS="key1,key2" make run-api-auth  # Production with authentication
+make run-api-dev                        # Development mode (no auth)
 ```
 
 ## Authentication

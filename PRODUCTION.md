@@ -21,15 +21,15 @@
 ## Quick Production Start
 
 ```bash
-# Build and run with authentication (REQUIRED)
+# Using Docker Hub image (recommended)
+docker run -d -p 8080:8080 \
+  -e API_KEYS="your-secure-key-here" \
+  --name chordpro-api \
+  io41/chordpro-api:latest
+
+# Or build from source
 make build
 API_KEYS="your-secure-key-here" make run-api-auth
-
-# Or manually
-docker run -d -p 8080:8080 \
-  -e API_KEYS="key1,key2,key3" \
-  --name chordpro-api \
-  chordpro-api
 ```
 
 ## Development Mode
@@ -106,7 +106,7 @@ API_KEY_2="admin-key"
 version: '3.8'
 services:
   chordpro-api:
-    image: chordpro-api:latest
+    image: io41/chordpro-api:latest
     ports:
       - "8080:8080"
     environment:
