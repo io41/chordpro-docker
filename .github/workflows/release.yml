@@ -20,12 +20,11 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Create Release
-        uses: actions/create-release@v1
+        uses: softprops/action-gh-release@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          tag_name: ${{ github.ref_name }}
-          release_name: ChordPro Web API ${{ github.ref_name }}
+          name: ChordPro Web API ${{ github.ref_name }}
           body: |
             ## ChordPro Web API Release ${{ github.ref_name }}
 
@@ -67,6 +66,7 @@ jobs:
 
   update-docker-hub-description:
     runs-on: ubuntu-latest
+    environment: production
     needs: create-release
     if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
     
