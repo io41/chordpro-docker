@@ -1,0 +1,157 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches:
+      - main
+      - develop
+    tags:
+      - 'v*'
+  pull_request:
+    branches:
+      - main
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: io41/chordpro-api
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Extract metadata for production image
+        id: meta-prod
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=semver,pattern={{major}}
+            type=raw,value=latest,enable={{is_default_branch}}
+
+      - name: Extract metadata for development image
+        id: meta-dev
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=dev,enable={{is_default_branch}}
+            type=raw,value=dev-{{sha}},enable={{is_default_branch}}
+
+      - name: Build and push production image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-prod.outputs.tags }}
+          labels: ${{ steps.meta-prod.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push development image
+        if: github.ref == 'refs/heads/main'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ./Dockerfile.dev
+          platforms: linux/amd64,linux/arm64
+          push: ${{ github.event_name != 'pull_request' }}
+          tags: ${{ steps.meta-dev.outputs.tags }}
+          labels: ${{ steps.meta-dev.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Test production image
+        if: github.event_name == 'pull_request'
+        run: |
+          docker build -t test-prod .
+          docker run --rm -e API_KEYS="test-key-12345678" test-prod python3 -c "
+          import requests
+          import time
+          import subprocess
+          import os
+          
+          # Start the server in background
+          proc = subprocess.Popen(['python3', 'app.py'])
+          time.sleep(5)
+          
+          try:
+              # Test health endpoint
+              result = subprocess.run(['curl', '-f', 'http://localhost:8080/health'], 
+                                    capture_output=True, timeout=10)
+              if result.returncode != 0:
+                  print('Health check failed')
+                  exit(1)
+              print('Health check passed')
+          finally:
+              proc.terminate()
+          "
+
+      - name: Test development image
+        if: github.event_name == 'pull_request'
+        run: |
+          docker build -f Dockerfile.dev -t test-dev .
+          docker run --rm -e DEVELOPMENT_MODE=true test-dev python3 -c "
+          import subprocess
+          import time
+          
+          # Start the server in background
+          proc = subprocess.Popen(['python3', 'app.py'])
+          time.sleep(5)
+          
+          try:
+              # Test health endpoint
+              result = subprocess.run(['curl', '-f', 'http://localhost:8080/health'], 
+                                    capture_output=True, timeout=10)
+              if result.returncode != 0:
+                  print('Health check failed')
+                  exit(1)
+              print('Development mode health check passed')
+          finally:
+              proc.terminate()
+          "
+
+  security-scan:
+    runs-on: ubuntu-latest
+    if: github.event_name != 'pull_request'
+    needs: build
+    
+    steps:
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          image-ref: '${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+
+      - name: Upload Trivy scan results to GitHub Security tab
+        uses: github/codeql-action/upload-sarif@v3
+        if: always()
+        with:
+          sarif_file: 'trivy-results.sarif'

@@ -1,0 +1,84 @@
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+env:
+  REGISTRY: docker.io
+  IMAGE_NAME: io41/chordpro-api
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Create Release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref_name }}
+          release_name: ChordPro Web API ${{ github.ref_name }}
+          body: |
+            ## ChordPro Web API Release ${{ github.ref_name }}
+
+            ### Docker Images
+            - **Production**: `io41/chordpro-api:${{ github.ref_name }}` or `io41/chordpro-api:latest`
+            - **Development**: `io41/chordpro-api:dev`
+
+            ### Quick Start
+            ```bash
+            # Production (Secure by default)
+            docker run -d -p 8080:8080 \
+              -e API_KEYS="your-secure-api-key-here" \
+              --name chordpro-api \
+              io41/chordpro-api:${{ github.ref_name }}
+
+            # Development (No authentication)
+            docker run -d -p 8080:8080 \
+              --name chordpro-api-dev \
+              io41/chordpro-api:dev
+            ```
+
+            ### Features
+            - ✅ ChordPro → PDF conversion with multiple output formats
+            - ✅ Built-in configurations (ukulele,modern3, guitar, etc.)
+            - ✅ Production-ready with security by default
+            - ✅ Multi-architecture support (linux/amd64, linux/arm64)
+            - ✅ Interactive web documentation
+            - ✅ Timing attack protection for API keys
+
+            ### Documentation
+            - [Production Guide](PRODUCTION.md)
+            - [API Examples](API_EXAMPLES.md)
+            - [Docker Hub](https://hub.docker.com/r/io41/chordpro-api)
+
+            ### What's Changed
+            See [RELEASE.md](RELEASE.md) for detailed changelog.
+          draft: false
+          prerelease: false
+
+  update-docker-hub-description:
+    runs-on: ubuntu-latest
+    needs: create-release
+    if: github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Update Docker Hub Description
+        uses: peter-evans/dockerhub-description@v4
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          repository: io41/chordpro-api
+          short-description: "Production-ready ChordPro Web API with security by default"
+          readme-filepath: ./DOCKER_HUB_README.md
