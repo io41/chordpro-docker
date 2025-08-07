@@ -1,0 +1,242 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChordPro Web API</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            margin: 0;
+            padding: 20px;
+            background-color: #f8f9fa;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1, h2, h3 {
+            color: #333;
+        }
+        h1 {
+            border-bottom: 3px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .endpoint {
+            background: #f8f9fa;
+            border-left: 4px solid #007bff;
+            margin: 20px 0;
+            padding: 15px;
+            border-radius: 4px;
+        }
+        .method {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-weight: bold;
+            color: white;
+            font-size: 0.8em;
+            margin-right: 10px;
+        }
+        .get { background-color: #28a745; }
+        .post { background-color: #007bff; }
+        code {
+            background: #f1f3f4;
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-family: 'Monaco', 'Consolas', monospace;
+            font-size: 0.9em;
+        }
+        pre {
+            background: #f8f9fa;
+            border: 1px solid #e9ecef;
+            border-radius: 4px;
+            padding: 15px;
+            overflow-x: auto;
+        }
+        pre code {
+            background: none;
+            padding: 0;
+        }
+        .auth-note {
+            background: #fff3cd;
+            border: 1px solid #ffeaa7;
+            border-radius: 4px;
+            padding: 15px;
+            margin: 20px 0;
+        }
+        .config-list {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 10px;
+            margin: 15px 0;
+        }
+        .config-item {
+            background: #e9ecef;
+            padding: 8px 12px;
+            border-radius: 4px;
+            font-family: monospace;
+        }
+        .example-section {
+            border-top: 1px solid #dee2e6;
+            margin-top: 30px;
+            padding-top: 20px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎵 ChordPro Web API</h1>
+        <p>A REST API wrapper for the <a href="https://chordpro.org">ChordPro</a> CLI utility. Convert ChordPro format songs to PDF, HTML, text, and other formats via HTTP requests.</p>
+        
+        <div class="auth-note">
+            <h3>🔐 Authentication</h3>
+            <p>This API requires authentication using an API key. Include your API key in the request header:</p>
+            <pre><code>X-API-Key: your-api-key-here</code></pre>
+        </div>
+
+        <h2>📋 API Endpoints</h2>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span>/health</h3>
+            <p>Health check endpoint - returns API status.</p>
+            <strong>Response:</strong>
+            <pre><code>{
+  "status": "healthy",
+  "service": "chordpro-api"
+}</code></pre>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span>/formats</h3>
+            <p>Get list of supported output formats.</p>
+            <strong>Response:</strong>
+            <pre><code>{
+  "supported_formats": ["pdf", "text", "cho", "html"],
+  "default_format": "pdf"
+}</code></pre>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method get">GET</span>/options</h3>
+            <p>Get list of supported CLI options and their descriptions.</p>
+        </div>
+
+        <div class="endpoint">
+            <h3><span class="method post">POST</span>/convert</h3>
+            <p>Convert ChordPro content to specified output format.</p>
+            <strong>Request Body:</strong>
+            <pre><code>{
+  "content": "ChordPro content string",
+  "output_format": "pdf|text|cho|html",
+  "options": {
+    "config": "ukulele,modern3",
+    "transpose": 2,
+    "meta": {"title": "Song Title", "artist": "Artist"},
+    "diagrams": true
+  }
+}</code></pre>
+            <strong>Response:</strong> Binary file download
+        </div>
+
+        <div class="example-section">
+            <h2>🚀 Usage Examples</h2>
+
+            <h3>Basic Conversion</h3>
+            <pre><code>curl -X POST http://localhost:8080/convert \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "content": "{title: Amazing Grace}\\n\\n[C]Amazing grace how [F]sweet the [C]sound"
+  }' \
+  --output song.pdf</code></pre>
+
+            <h3>With Ukulele Configuration</h3>
+            <pre><code>curl -X POST http://localhost:8080/convert \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "content": "{title: Ukulele Song}\\n\\n[C]Hello [G]world",
+    "options": {
+      "config": "ukulele,modern3"
+    }
+  }' \
+  --output ukulele_song.pdf</code></pre>
+
+            <h3>Advanced Options</h3>
+            <pre><code>curl -X POST http://localhost:8080/convert \
+  -H "Content-Type: application/json" \
+  -H "X-API-Key: your-api-key" \
+  -d '{
+    "content": "{title: My Song}\\n\\n[Am]House of the [C]rising [G]sun",
+    "output_format": "pdf",
+    "options": {
+      "config": "ukulele,modern3",
+      "transpose": -2,
+      "meta": {
+        "artist": "Traditional",
+        "genre": "Folk"
+      },
+      "diagrams": true
+    }
+  }' \
+  --output advanced_song.pdf</code></pre>
+        </div>
+
+        <h2>⚙️ Configuration Options</h2>
+        <p>Available built-in ChordPro configurations:</p>
+        <div class="config-list">
+            <div class="config-item">ukulele</div>
+            <div class="config-item">guitar</div>
+            <div class="config-item">modern1</div>
+            <div class="config-item">modern2</div>
+            <div class="config-item">modern3</div>
+            <div class="config-item">keyboard</div>
+            <div class="config-item">mandolin-ly</div>
+            <div class="config-item">nashville</div>
+            <div class="config-item">roman</div>
+            <div class="config-item">dark</div>
+        </div>
+
+        <h2>📖 Output Formats</h2>
+        <ul>
+            <li><strong>PDF</strong> - High-quality printable format (default)</li>
+            <li><strong>HTML</strong> - Web-ready format with styling</li>
+            <li><strong>Text</strong> - Plain text output</li>
+            <li><strong>ChordPro</strong> - Normalized ChordPro format</li>
+        </ul>
+
+        <h2>🔧 CLI Options</h2>
+        <ul>
+            <li><strong>config</strong> - Single config, comma-separated, or array of configurations</li>
+            <li><strong>transpose</strong> - Transpose by semitones (integer)</li>
+            <li><strong>meta</strong> - Add metadata (title, artist, album, etc.)</li>
+            <li><strong>diagrams</strong> - Include/exclude chord diagrams (boolean)</li>
+        </ul>
+
+        <h2>🔗 Resources</h2>
+        <ul>
+            <li><a href="https://chordpro.org/chordpro/using-chordpro/">ChordPro CLI Documentation</a></li>
+            <li><a href="https://chordpro.org/chordpro/chordpro-file-format-specification/">ChordPro File Format</a></li>
+            <li><a href="https://github.com/ChordPro/chordpro">ChordPro GitHub Repository</a></li>
+        </ul>
+
+        <h2>🔧 API Endpoints</h2>
+        <p><em>Note: These endpoints require authentication when API keys are configured.</em></p>
+        <ul>
+            <li><code>GET /formats</code> - Get supported output formats</li>
+            <li><code>GET /options</code> - Get available CLI options</li>
+            <li><code>POST /convert</code> - Convert ChordPro content</li>
+        </ul>
+
+        <footer style="margin-top: 40px; padding-top: 20px; border-top: 1px solid #dee2e6; color: #6c757d; text-align: center;">
+            <p>ChordPro Web API • Powered by <a href="https://chordpro.org">ChordPro</a> {{ chordpro_version }}</p>
+        </footer>
+    </div>
+</body>
+</html>

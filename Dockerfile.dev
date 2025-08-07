@@ -15,12 +15,12 @@ RUN apt-get update && \
 # Create app directory
 WORKDIR /app
 
-# Copy requirements and install Python dependencies
-COPY requirements.txt requirements-prod.txt ./
-RUN pip3 install --no-cache-dir --break-system-packages -r requirements-prod.txt
+# Copy requirements and install Python dependencies (dev mode)
+COPY requirements.txt ./
+RUN pip3 install --no-cache-dir --break-system-packages -r requirements.txt
 
-# Copy application, templates, and config
-COPY app.py gunicorn.conf.py ./
+# Copy application and templates
+COPY app.py ./
 COPY templates/ ./templates/
 
 # Create temp directory for processing
@@ -33,5 +33,6 @@ EXPOSE 8080
 HEALTHCHECK --interval=30s --timeout=3s --start-period=10s --retries=3 \
     CMD python3 -c "import urllib.request; urllib.request.urlopen('http://localhost:8080/health')" || exit 1
 
-# Run with Gunicorn for production
-CMD ["gunicorn", "--config", "gunicorn.conf.py", "app:app"]
+# Run with Flask dev server in development mode
+ENV DEVELOPMENT_MODE=true
+CMD ["python3", "app.py"]
